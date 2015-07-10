@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:background="@android:color/background_light"
+    android:layout_height="match_parent" tools:context=".Home" tools:deviceIds="wear_round">
+
+    <TextView
+        android:background="#73000000"
+        android:id="@+id/txt_title"
+        android:layout_marginTop="0dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:layout_alignParentTop="true"
+        android:gravity="center"
+        android:text="Send"
+        android:textSize="19sp"
+        android:fontFamily="san-serif-light"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+    <android.support.wearable.view.WearableListView
+        android:layout_below="@id/txt_title"
+        android:layout_marginLeft="3dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/lst_items" />
+</RelativeLayout>
