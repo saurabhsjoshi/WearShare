@@ -1,10 +1,10 @@
 package com.sau.wearshare.viewholders;
 
 import android.content.Context;
+import android.support.wearable.view.CircledImageView;
 import android.support.wearable.view.WearableListView;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sau.wearshare.R;
@@ -14,13 +14,13 @@ import com.sau.wearshare.R;
  */
 public class HomeListItemView extends FrameLayout implements WearableListView.OnCenterProximityListener{
 
-    final ImageView image;
+    final CircledImageView image;
     final TextView text;
 
     public HomeListItemView(Context context){
         super(context);
         View.inflate(context, R.layout.listitem_send, this);
-        image = (ImageView) findViewById(R.id.image);
+        image = (CircledImageView) findViewById(R.id.image);
         text = (TextView) findViewById(R.id.text);
     }
 

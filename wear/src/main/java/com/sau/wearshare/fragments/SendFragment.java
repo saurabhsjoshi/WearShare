@@ -45,9 +45,9 @@ public class SendFragment extends Fragment implements WearableListView.OnClickLi
     private void setAdapter(){
         List<SendListViewItem> items = new ArrayList<>();
 
-        items.add(new SendListViewItem("Click", R.drawable.ic_camera_alt_amber_600_36dp));
-        items.add(new SendListViewItem("Folder", R.drawable.ic_folder_open_amber_600_36dp));
-        items.add(new SendListViewItem("File", R.drawable.ic_insert_drive_file_amber_600_36dp));
+        items.add(new SendListViewItem("Click", R.drawable.ic_camera_white_24dp));
+        items.add(new SendListViewItem("Folder", R.drawable.ic_folder_open_white_24dp));
+        items.add(new SendListViewItem("File", R.drawable.ic_insert_drive_file_white_24dp));
         SendListAdapter adapter = new SendListAdapter(getActivity(), items);
         listView.setAdapter(adapter);
         listView.setOnClickListener(this);

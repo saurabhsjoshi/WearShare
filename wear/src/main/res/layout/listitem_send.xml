@@ -3,21 +3,26 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:id="@+id/rel_home"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_height="wrap_content">
-
-    <View
-        android:layout_width="1dp"
-        android:layout_height="fill_parent"
-        android:id="@+id/center"
-        android:visibility="invisible"
-        android:layout_centerHorizontal="true" />
+    <android.support.wearable.view.CircledImageView
+        android:id="@+id/image"
+        android:layout_marginLeft="25dp"
+        android:layout_height="54dp"
+        android:layout_width="54dp"
+        app:circle_radius="25dp"
+        app:circle_color="@color/btn_talk_blue"
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        />
 
     <TextView
         android:id="@+id/text"
-        android:layout_toRightOf="@id/center"
         android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/image"
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
+        android:layout_marginLeft="8dp"
         android:textColor="@color/black"
         android:fontFamily="sans-serif-thin"
         android:scaleX="0.8"
@@ -26,18 +31,7 @@
         android:textSize="18sp"
         />
 
-    <ImageView
-        android:id="@+id/image"
-        android:layout_height="52dp"
-        android:layout_width="52dp"
-        android:layout_marginLeft="20dp"
-        android:layout_toLeftOf="@id/center"
-        android:background="@android:color/transparent"
-        android:layout_marginRight="5dp"
-        android:scaleX="0.8"
-        android:scaleY="0.8"
-        android:alpha="0.6"
-        />
+
 
 
 </RelativeLayout>

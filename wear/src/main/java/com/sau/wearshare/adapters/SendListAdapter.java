@@ -1,9 +1,9 @@
 package com.sau.wearshare.adapters;
 
 import android.content.Context;
+import android.support.wearable.view.CircledImageView;
 import android.support.wearable.view.WearableListView;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.sau.wearshare.R;
@@ -36,7 +36,7 @@ public class SendListAdapter extends WearableListView.Adapter {
         final SendListViewItem item = items.get(position);
 
         ((TextView) view.findViewById(R.id.text)).setText(item.getTitle());
-        ((ImageView) view.findViewById(R.id.image)).setImageResource(item.getIconRes());
+        ((CircledImageView) view.findViewById(R.id.image)).setImageResource(item.getIconRes());
     }
 
     @Override
