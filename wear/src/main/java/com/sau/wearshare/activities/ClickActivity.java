@@ -44,13 +44,14 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
         DataApi.DataListener {
 
     private static final String TAG = "ClickActivity";
+
     private static final String IMAGE_PATH = "/image_bitmap";
     private static final String IMAGE_KEY = "image_key";
     private static final String SEND_PICTURE_PATH = "/send_photo";
+    private static final String CLICK_PATH = "/click_photo";
 
     private GoogleApiClient mGoogleApiClient;
     private static final long CONNECTION_TIME_OUT_MS = 100;
-    private static final String CLICK_PATH = "/click_photo";
     private String node;
 
     private GridViewPager mPager;
@@ -92,6 +93,18 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
 
     }
 
+
+    public void addFragments(){
+        Intent intent = new Intent(this, ConfirmationActivity.class);
+        intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                ConfirmationActivity.SUCCESS_ANIMATION);
+        intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,
+                "Clicking Photo");
+        startActivityForResult(intent, 99);
+        sendTakePictureMessage();
+
+    }
+
     private void retrieveDeviceNode() {
         new Thread(new Runnable() {
             @Override
@@ -108,17 +121,6 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
                     node = nodes.get(0).getId();
             }
         }).start();
-    }
-
-    public void addFragments(){
-        Intent intent = new Intent(this, ConfirmationActivity.class);
-        intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
-                ConfirmationActivity.SUCCESS_ANIMATION);
-        intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,
-                "Clicking Photo");
-        startActivityForResult(intent, 99);
-        sendTakePictureMessage();
-
     }
     private void initGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(this)

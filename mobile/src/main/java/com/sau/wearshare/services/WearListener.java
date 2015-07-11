@@ -1,6 +1,7 @@
 package com.sau.wearshare.services;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -34,17 +35,22 @@ public class WearListener extends WearableListenerService {
 
     private static final String CLICK_PATH = "/click_photo";
     private static final String SEND_PICTURE_PATH = "/send_photo";
+    private static final String CANCEL_PICTURE_PATH = "/cancel_photo";
+    private static final String GOT_KEY_PATH = "/got_key";
+    private static final String DOWNLOAD_STARTED_PATH = "/download_started";
 
     private static final long CONNECTION_TIME_OUT_MS = 100;
     private String node;
 
-    private static final String GOT_KEY_PATH = "got_key";
-
-    GoogleApiClient mGoogleApiClient;
+    private GoogleApiClient mGoogleApiClient;
+    private SendTask sendTask;
+    Handler mHandler;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
@@ -74,6 +80,8 @@ public class WearListener extends WearableListenerService {
             takePicture();
         else if (messageEvent.getPath().equals(SEND_PICTURE_PATH))
             sendPictureFromData();
+        else if (messageEvent.getPath().equals(CANCEL_PICTURE_PATH))
+            cancelSendPicture();
 
     }
 
@@ -118,29 +126,51 @@ public class WearListener extends WearableListenerService {
         );
     }
 
+    private void sendDownloadStartedMessage(){
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, DOWNLOAD_STARTED_PATH, new byte[0]).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        if (!sendMessageResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failed to send message with status code: "
+                                    + sendMessageResult.getStatus().getStatusCode());
+                        }
+                    }
+                }
+        );
+    }
+
+    private boolean startMsgSent = false;
+
     private void sendPictureFromData(){
         Task.init(Secret.API_KEY);
-        SendTask sendTask = new SendTask(this, new File[]{new File(getFilesDir() + "/temp.png")});
-
+        sendTask = new SendTask(this, new File[]{new File(getFilesDir() + "/temp.png")});
         sendTask.setOnTaskListener(new Task.OnTaskListener() {
             @Override
             public void onNotify(int state, int detailedState, Object obj) {
-                if(state == SendTask.State.PREPARING) {
-                    if(detailedState == SendTask.DetailedState.PREPARING_UPDATED_KEY) {
-                        String key = (String)obj;
-                        if(key != null) {
+                if (state == SendTask.State.PREPARING) {
+                    if (detailedState == SendTask.DetailedState.PREPARING_UPDATED_KEY) {
+                        String key = (String) obj;
+                        if (key != null)
                             sendPictureCode(key);
-                        }
                     }
+                }
+
+                else if(state == SendTask.State.FINISHED) {
+                    startMsgSent = false;
+                } else if(state == SendTask.State.ERROR) {
+                    startMsgSent = false;
                 }
             }
         });
         sendTask.start();
-
     }
 
-
-
-
+    private void cancelSendPicture(){
+        if(sendTask != null)
+            sendTask.cancel();
+        startMsgSent = false;
+    }
 
 }

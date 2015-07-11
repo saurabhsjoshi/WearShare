@@ -13,7 +13,7 @@ import com.sau.wearshare.activities.CountDownActivity;
  */
 public class SendListener extends WearableListenerService {
 
-    private static final String GOT_KEY_PATH = "got_key";
+    private static final String GOT_KEY_PATH = "/got_key";
 
     GoogleApiClient mGoogleApiClient;
 
