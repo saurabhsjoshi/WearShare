@@ -1,4 +1,4 @@
-package com.sau.wearshare.fragments;
+package com.sau.wearshare.fragments.home;
 
 import android.app.Fragment;
 import android.os.Bundle;

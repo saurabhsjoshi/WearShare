@@ -13,8 +13,8 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.sau.wearshare.adapters.HomePagerAdapter;
-import com.sau.wearshare.fragments.ReceiveFragment;
-import com.sau.wearshare.fragments.SendFragment;
+import com.sau.wearshare.fragments.home.ReceiveFragment;
+import com.sau.wearshare.fragments.home.SendFragment;
 
 import java.util.ArrayList;
 import java.util.List;

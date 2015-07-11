@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:background="@android:color/background_light"
-    android:layout_height="match_parent" tools:context=".Home" tools:deviceIds="wear_square">
+    android:layout_height="match_parent"  tools:deviceIds="wear_square">
 
     <android.support.wearable.view.GridViewPager
         android:id="@+id/pager"
@@ -12,6 +12,7 @@
     <android.support.wearable.view.DotsPageIndicator
         android:id="@+id/page_indicator"
         android:layout_width="wrap_content"
+        android:visibility="gone"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
@@ -19,4 +20,5 @@
         android:padding="5dp"
         android:background="@drawable/rounded_background">
     </android.support.wearable.view.DotsPageIndicator>
+
 </RelativeLayout>

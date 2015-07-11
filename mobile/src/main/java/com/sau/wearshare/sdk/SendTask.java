@@ -1,4 +1,4 @@
-package com.estmob.android.sendanywhere.sdk;
+package com.sau.wearshare.sdk;
 
 import android.content.Context;
 

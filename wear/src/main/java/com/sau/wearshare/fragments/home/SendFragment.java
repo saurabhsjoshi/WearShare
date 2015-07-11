@@ -1,6 +1,7 @@
-package com.sau.wearshare.fragments;
+package com.sau.wearshare.fragments.home;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.wearable.view.WatchViewStub;
@@ -8,8 +9,10 @@ import android.support.wearable.view.WearableListView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.sau.wearshare.R;
+import com.sau.wearshare.activities.ClickActivity;
 import com.sau.wearshare.adapters.SendListAdapter;
 import com.sau.wearshare.models.SendListViewItem;
 
@@ -19,7 +22,9 @@ import java.util.List;
 /**
  * Created by saurabh on 15-07-10.
  */
-public class SendFragment extends Fragment implements WearableListView.OnClickListener  {
+public class SendFragment extends Fragment implements WearableListView.ClickListener,
+        WearableListView.OnLongClickListener  {
+
     private WearableListView listView;
 
     @Nullable
@@ -50,11 +55,34 @@ public class SendFragment extends Fragment implements WearableListView.OnClickLi
         items.add(new SendListViewItem("File", R.drawable.ic_insert_drive_file_white_24dp));
         SendListAdapter adapter = new SendListAdapter(getActivity(), items);
         listView.setAdapter(adapter);
-        listView.setOnClickListener(this);
+        //listView.setLongClickable(true);
+        listView.setClickListener(this);
+
+        //listView.setOnLongClickListener(this);
+
+
+    }
+
+
+
+    @Override
+    public boolean onLongClick(View view) {
+        Toast.makeText(getActivity(), "Long", Toast.LENGTH_SHORT).show();
+        return false;
     }
 
     @Override
-    public void onClick(View view) {
+    public void onClick(WearableListView.ViewHolder viewHolder) {
+        switch (viewHolder.getAdapterPosition()){
+            case 0:
+                startActivity(new Intent(getActivity(), ClickActivity.class));
+                break;
+        }
+
+    }
+
+    @Override
+    public void onTopEmptyRegionClick() {
 
     }
 }
