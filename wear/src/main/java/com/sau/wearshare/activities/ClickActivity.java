@@ -30,6 +30,7 @@ import com.sau.wearshare.R;
 import com.sau.wearshare.adapters.HomePagerAdapter;
 import com.sau.wearshare.fragments.click.ClickPhotoFragment;
 import com.sau.wearshare.fragments.click.PreviewPhotoFragment;
+import com.sau.wearshare.fragments.click.SendPhotoFragment;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
     private static final String TAG = "ClickActivity";
     private static final String IMAGE_PATH = "/image_bitmap";
     private static final String IMAGE_KEY = "image_key";
+    private static final String SEND_PICTURE_PATH = "/send_photo";
 
     private GoogleApiClient mGoogleApiClient;
     private static final long CONNECTION_TIME_OUT_MS = 100;
@@ -132,14 +134,16 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
         // Check which request we're responding to
         if (requestCode == 99) {
             if(!mFragmentShowing){
-                mPager.setOffscreenPageCount(1);
+                mPager.setOffscreenPageCount(2);
                 mPreviewPhotoFragment = new PreviewPhotoFragment();
                 pages.add(mPreviewPhotoFragment);
+                pages.add(new SendPhotoFragment());
                 dotsPageIndicator = (DotsPageIndicator) findViewById(R.id.page_indicator);
                 dotsPageIndicator.setDotSpacing((int) getResources().getDimension(R.dimen.dots_spacing));
                 dotsPageIndicator.setPager(mPager);
                 dotsPageIndicator.setVisibility(View.VISIBLE);
                 mFragmentShowing = true;
+
             }
             moveToPage(1);
         }
@@ -152,6 +156,21 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
     public void sendTakePictureMessage(){
         Wearable.MessageApi.sendMessage(
                 mGoogleApiClient, node, CLICK_PATH, new byte[0]).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        if (!sendMessageResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failed to send message with status code: "
+                                    + sendMessageResult.getStatus().getStatusCode());
+                        }
+                    }
+                }
+        );
+    }
+
+    public void sendPicturePath(){
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, SEND_PICTURE_PATH, new byte[0]).setResultCallback(
                 new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
                     public void onResult(MessageApi.SendMessageResult sendMessageResult) {
@@ -188,6 +207,8 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
             }
         }
     }
+
+
 
     private Bitmap loadBitmapFromAsset(GoogleApiClient apiClient, Asset asset) {
         if (asset == null) {
