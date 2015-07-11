@@ -169,6 +169,11 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
     }
 
     public void sendPicturePath(){
+        Intent intent = new Intent(this, ConfirmationActivity.class);
+        intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                ConfirmationActivity.OPEN_ON_PHONE_ANIMATION);
+        intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Sending");
+        startActivity(intent);
         Wearable.MessageApi.sendMessage(
                 mGoogleApiClient, node, SEND_PICTURE_PATH, new byte[0]).setResultCallback(
                 new ResultCallback<MessageApi.SendMessageResult>() {
