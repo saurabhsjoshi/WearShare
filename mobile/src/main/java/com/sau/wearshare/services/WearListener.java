@@ -1,8 +1,11 @@
 package com.sau.wearshare.services;
 
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,6 +21,7 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
+import com.sau.wearshare.R;
 import com.sau.wearshare.Secret;
 import com.sau.wearshare.activities.CameraActivity;
 import com.sau.wearshare.sdk.SendTask;
@@ -44,13 +48,19 @@ public class WearListener extends WearableListenerService {
     private static final long CONNECTION_TIME_OUT_MS = 100;
     private String node;
 
+
     private GoogleApiClient mGoogleApiClient;
     private SendTask sendTask;
+    private NotificationManager mNotificationManager;
+    private NotificationCompat.Builder mNotificationBuilder;
+    private int mNotificationId = 1;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Task.init(Secret.API_KEY);
+        mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
@@ -148,6 +158,7 @@ public class WearListener extends WearableListenerService {
     }
 
     private void sendPictureFromData(){
+        buildNotification();
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
@@ -165,36 +176,57 @@ public class WearListener extends WearableListenerService {
                         } else if(state == SendTask.State.TRANSFERRING) {
                             SendTask.FileInfo fileState = (SendTask.FileInfo)obj;
                             if(fileState != null) {
+                                int percentage = (int) (fileState.getTransferSize() * 100.0 /fileState.getTotalSize());
+                                mNotificationBuilder.setProgress(100,
+                                        percentage, false);
+                                mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
                                 Logger.LOGD(TAG, String.format("%s: %s/%s",
                                         fileState.getFile().getName(),
                                         fileState.getTransferSize(), fileState.getTotalSize()));
                                 sendDownloadStartedMessage();
                             }
                         } else if (state == SendTask.State.FINISHED) {
+                            String message = "Done";
                             switch(detailedState) {
                                 case SendTask.DetailedState.FINISHED_SUCCESS:
+                                    message = "File transfer complete!";
                                     Logger.LOGD(TAG, "Transfer finished (success)");
                                     break;
                                 case SendTask.DetailedState.FINISHED_CANCEL:
+                                    message = "File transfer cancelled!";
                                     Logger.LOGD(TAG, "Transfer finished (canceled)");
                                     break;
                                 case SendTask.DetailedState.FINISHED_ERROR:
+                                    message = "File transfer error!";
                                     Logger.LOGD(TAG, "Transfer finished (error!)");
                                     break;
                             }
+                            mNotificationBuilder.setContentText(message)
+                                    .setProgress(0, 0, false)
+                                    .setOngoing(false);
+                            mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
                         }
                         else if(state == SendTask.State.ERROR) {
+                            String message = "Error";
                             switch(detailedState) {
                                 case SendTask.DetailedState.ERROR_SERVER:
-                                    Logger.LOGD(TAG, "Netork/Server Error");
+                                    message = "Network error occurred!";
+                                    Logger.LOGD(TAG, "Network/Server Error");
                                     break;
                                 case SendTask.DetailedState.ERROR_NO_REQUEST:
+                                    message = "Timeout!";
                                     Logger.LOGD(TAG, "Timeout!");
                                     break;
                                 case SendTask.DetailedState.ERROR_NO_EXIST_FILE:
+                                    message = "File does not!";
                                     Logger.LOGD(TAG,"No exist files!");
                                     break;
                             }
+
+                            mNotificationBuilder.setContentText(message)
+                                    .setProgress(0, 0, false)
+                                    .setOngoing(false);
+                            mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
                         }
                     }
                 });
@@ -213,6 +245,14 @@ public class WearListener extends WearableListenerService {
             }
         });
 
+    }
+
+    private void buildNotification() {
+        mNotificationBuilder = new NotificationCompat.Builder(this);
+        mNotificationBuilder.setContentTitle("Sending File")
+                .setContentText("Upload in progress")
+                .setOngoing(true)
+                .setSmallIcon(R.drawable.ic_launcher);
     }
 
 }

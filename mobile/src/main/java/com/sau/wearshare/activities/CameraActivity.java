@@ -24,10 +24,14 @@ import com.google.android.gms.wearable.Wearable;
 import com.sau.wearshare.R;
 import com.sau.wearshare.utils.Logger;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
+import java.util.Random;
 
 /**
  * Created by saurabh on 2015-07-11.
@@ -212,6 +216,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback  
         protected Void doInBackground(Bitmap... bitmaps) {
             Bitmap bm = bitmaps[0];
             saveBitmapToFile(bm);
+            //makeDummyFile();
             sendPhoto(toAsset(getResizedBitmap(bm, 500)));
             return null;
         }
@@ -222,5 +227,22 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback  
                 dialog.dismiss();
             finish();
         }
+    }
+
+     private File makeDummyFile() {
+         try {
+             File file = File.createTempFile(mContext.getFilesDir() + "/click.jpg", null);
+             file.deleteOnExit();
+
+             OutputStream out = new BufferedOutputStream(
+                     new FileOutputStream(file), 8192);
+             Random generator = new Random();
+             for(long i=0; i<700; i++) {
+                 out.write(generator.nextInt());
+             }
+             out.close();
+             return file;
+         }catch (Exception ignore){}
+         return null;
     }
 }
