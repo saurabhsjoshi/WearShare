@@ -18,6 +18,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".activities.ClickActivity"/>
+        <activity android:name=".activities.FileActivity"/>
         <activity
             android:name="android.support.wearable.activity.ConfirmationActivity">
         </activity>

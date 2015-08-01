@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.sau.wearshare.R;
 import com.sau.wearshare.activities.ClickActivity;
+import com.sau.wearshare.activities.FileActivity;
 import com.sau.wearshare.adapters.SendListAdapter;
 import com.sau.wearshare.models.SendListViewItem;
 
@@ -77,6 +78,8 @@ public class SendFragment extends Fragment implements WearableListView.ClickList
             case 0:
                 startActivity(new Intent(getActivity(), ClickActivity.class));
                 break;
+            case 1:
+                startActivity(new Intent(getActivity(), FileActivity.class));
         }
 
     }
