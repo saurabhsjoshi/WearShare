@@ -3,6 +3,7 @@ package com.sau.wearshare.services;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.NotificationCompat;
@@ -24,6 +25,7 @@ import com.google.android.gms.wearable.WearableListenerService;
 import com.sau.wearshare.R;
 import com.sau.wearshare.Secret;
 import com.sau.wearshare.activities.CameraActivity;
+import com.sau.wearshare.sdk.ReceiveTask;
 import com.sau.wearshare.sdk.SendTask;
 import com.sau.wearshare.sdk.Task;
 import com.sau.wearshare.utils.Logger;
@@ -44,13 +46,16 @@ public class WearListener extends WearableListenerService {
     private static final String CANCEL_PICTURE_PATH = "/cancel_photo";
     private static final String GOT_KEY_PATH = "/got_key";
     private static final String DOWNLOAD_STARTED_PATH = "/download_started";
+    private static final String RECEIVE_FILE_PATH = "/receive_path";
 
     private static final long CONNECTION_TIME_OUT_MS = 100;
     private String node;
 
 
     private GoogleApiClient mGoogleApiClient;
+
     private SendTask sendTask;
+    private ReceiveTask receiveTask;
     private NotificationManager mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
     private int mNotificationId = 1;
@@ -66,6 +71,8 @@ public class WearListener extends WearableListenerService {
                 .build();
         mGoogleApiClient.connect();
         retrieveDeviceNode();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("cancel_upload");
     }
 
     @Override
@@ -92,7 +99,8 @@ public class WearListener extends WearableListenerService {
             sendPictureFromData();
         else if (messageEvent.getPath().equals(CANCEL_PICTURE_PATH))
             cancelSendPicture();
-
+        else if (messageEvent.getPath().equals(RECEIVE_FILE_PATH))
+            receiveFile(new String(messageEvent.getData()));
     }
 
     private void retrieveDeviceNode() {
@@ -158,7 +166,7 @@ public class WearListener extends WearableListenerService {
     }
 
     private void sendPictureFromData(){
-        buildNotification();
+        buildNotification("Sending File", "Upload in progress");
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
@@ -235,24 +243,119 @@ public class WearListener extends WearableListenerService {
         });
     }
 
-    private void cancelSendPicture(){
+    public void cancelSendPicture(){
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if(sendTask != null)
+                if (sendTask != null)
                     sendTask.cancel();
             }
         });
 
     }
 
-    private void buildNotification() {
+    private void buildNotification(String title, String message) {
         mNotificationBuilder = new NotificationCompat.Builder(this);
-        mNotificationBuilder.setContentTitle("Sending File")
-                .setContentText("Upload in progress")
+        mNotificationBuilder.setContentTitle(title)
+                .setContentText(message)
                 .setOngoing(true)
                 .setSmallIcon(R.drawable.ic_launcher);
     }
 
+
+    private void receiveFile(final String key){
+        buildNotification("Receiving File", "Download in progress");
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                receiveTask = new ReceiveTask(getApplicationContext(), key);
+                receiveTask.setOnTaskListener(new Task.OnTaskListener() {
+                    @Override
+                    public void onNotify(int state, int detailedState, Object obj) {
+                        if (state == ReceiveTask.State.PREPARING) {
+                            mNotificationBuilder.setProgress(100,
+                                    0, false);
+                            mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
+                            if (detailedState == ReceiveTask.DetailedState.PREPARING_UPDATED_FILE_LIST) {
+                                Task.FileInfo[] fileInfoList = (Task.FileInfo[])obj;
+                                for(Task.FileInfo file : fileInfoList) {
+                                    Logger.LOGD(TAG,String.format("%s: %d bytes",
+                                            file.getPathName(), file.getTotalSize()));
+                                }
+                            }
+                        }
+
+                        else if (state == ReceiveTask.State.TRANSFERRING) {
+                            ReceiveTask.FileInfo fileState = (ReceiveTask.FileInfo) obj;
+                            if (fileState != null) {
+                                int percentage = (int) (fileState.getTransferSize() * 100.0 /fileState.getTotalSize());
+                                mNotificationBuilder.setProgress(100,
+                                        percentage, false);
+                                mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
+                                Logger.LOGD(TAG, String.format("%s => %s/%s",
+                                        fileState.getFile().getName(),
+                                        fileState.getTransferSize(), fileState.getTotalSize()));
+                            }
+                        }
+
+                        else if (state == ReceiveTask.State.FINISHED) {
+                            String message = "Done!";
+                            switch (detailedState) {
+                                case ReceiveTask.DetailedState.FINISHED_SUCCESS:
+                                    message = "Download successful!";
+                                    Logger.LOGD(TAG,"Transfer finished (success)");
+                                    break;
+                                case ReceiveTask.DetailedState.FINISHED_CANCEL:
+                                    message = "Download cancelled!";
+                                    Logger.LOGD(TAG,"Transfer Cancelled");
+                                    break;
+                                case ReceiveTask.DetailedState.FINISHED_ERROR:
+                                    message = "Download error! Please try again.";
+                                    Logger.LOGD(TAG,"Transfer finished (error!)");
+                                    break;
+                            }
+                            mNotificationBuilder.setContentText(message)
+                                    .setProgress(0, 0, false)
+                                    .setOngoing(false);
+                            mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
+                        }
+
+                        else if (state == ReceiveTask.State.ERROR) {
+                            String message = "Error!";
+                            switch (detailedState) {
+                                case ReceiveTask.DetailedState.ERROR_SERVER:
+                                    message = "Network Error!";
+                                    Logger.LOGD(TAG, "Network or Server Error!");
+                                    break;
+                                case ReceiveTask.DetailedState.ERROR_NO_EXIST_KEY:
+                                    message = "Invalid Key!";
+                                    Logger.LOGD(TAG,"Invalid Key!");
+                                    break;
+                                case ReceiveTask.DetailedState.ERROR_FILE_NO_DOWNLOAD_PATH:
+                                    message = "Invalid download path!";
+                                    Logger.LOGD(TAG, "Invalid download path");
+                                    break;
+                            }
+                            mNotificationBuilder.setContentText(message)
+                                    .setProgress(0, 0, false)
+                                    .setOngoing(false);
+                            mNotificationManager.notify(mNotificationId, mNotificationBuilder.build());
+                        }
+
+                    }
+                });
+
+                receiveTask.start();
+            }
+        });
+    }
+
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
 }

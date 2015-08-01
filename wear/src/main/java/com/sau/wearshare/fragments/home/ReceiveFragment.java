@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.sau.wearshare.Home;
 import com.sau.wearshare.R;
 
 /**
@@ -29,7 +30,12 @@ public class ReceiveFragment extends Fragment {
             public void onLayoutInflated(WatchViewStub stub) {
                 btn_talk = (CircularButton) view.findViewById(R.id.btn_talk);
                 btn_talk.setColor(getResources().getColor(R.color.btn_talk_blue));
-
+                btn_talk.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        ((Home)getActivity()).displaySpeechRecognizer();
+                    }
+                });
             }
         });
 
@@ -37,6 +43,5 @@ public class ReceiveFragment extends Fragment {
     }
 
     private void setAdapter(){
-
     }
 }

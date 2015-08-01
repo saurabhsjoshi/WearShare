@@ -83,7 +83,6 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
     }
 
     private void setUI(){
-
         mPager = (GridViewPager) findViewById(R.id.pager);
         mPager.setOffscreenPageCount(0);
         mClickPhotoFragment = new ClickPhotoFragment();
