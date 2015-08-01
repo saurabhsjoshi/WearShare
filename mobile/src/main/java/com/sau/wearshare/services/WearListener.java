@@ -4,6 +4,7 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.NotificationCompat;
@@ -20,11 +21,14 @@ import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.sau.wearshare.R;
 import com.sau.wearshare.Secret;
 import com.sau.wearshare.activities.CameraActivity;
+import com.sau.wearshare.model.FileObject;
 import com.sau.wearshare.sdk.ReceiveTask;
 import com.sau.wearshare.sdk.SendTask;
 import com.sau.wearshare.sdk.Task;
@@ -47,6 +51,12 @@ public class WearListener extends WearableListenerService {
     private static final String GOT_KEY_PATH = "/got_key";
     private static final String DOWNLOAD_STARTED_PATH = "/download_started";
     private static final String RECEIVE_FILE_PATH = "/receive_path";
+
+    private static final String EXPLORE_HOME_PATH = "/explore_home";
+    private static final String EXPLORE_FOLDER_PATH = "/explore_folder";
+    private static final String EXPLORE_DATA_PATH = "/explore_data";
+    private static final String EXPLORE_SENT_PATH = "/explore_sent";
+
 
     private static final long CONNECTION_TIME_OUT_MS = 100;
     private String node;
@@ -101,6 +111,10 @@ public class WearListener extends WearableListenerService {
             cancelSendPicture();
         else if (messageEvent.getPath().equals(RECEIVE_FILE_PATH))
             receiveFile(new String(messageEvent.getData()));
+        else if (messageEvent.getPath().equals(EXPLORE_HOME_PATH))
+            sendExploreFiles(new String(messageEvent.getData()), true);
+        else if (messageEvent.getPath().equals(EXPLORE_FOLDER_PATH))
+            sendExploreFiles(new String(messageEvent.getData()), false);
     }
 
     private void retrieveDeviceNode() {
@@ -120,6 +134,33 @@ public class WearListener extends WearableListenerService {
             }
         }).start();
     }
+
+
+
+    private void sendExploreFiles(String path, boolean isHome){
+        if(isHome)
+            path = Environment.getExternalStorageDirectory().toString();
+
+        File f = new File(path);
+        File file[] = f.listFiles();
+        for(int i = 0; i < file.length; i++){
+            FileObject temp;
+            PutDataMapRequest putDataMapReq = PutDataMapRequest.create(EXPLORE_DATA_PATH);
+
+            if(file[i].isFile())
+                temp = new FileObject(file[i].getName(), true);
+            else
+                temp = new FileObject(file[i].getName(), false);
+
+            temp.getDataMap(putDataMapReq.getDataMap());
+            PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+            Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq).await();
+        }
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, EXPLORE_SENT_PATH, new byte[0]);
+
+    }
+
 
 
 
@@ -263,7 +304,6 @@ public class WearListener extends WearableListenerService {
                 .setSmallIcon(R.drawable.ic_launcher);
     }
 
-
     private void receiveFile(final String key){
         buildNotification("Receiving File", "Download in progress");
         Handler handler = new Handler(Looper.getMainLooper());
@@ -351,8 +391,6 @@ public class WearListener extends WearableListenerService {
             }
         });
     }
-
-
 
     @Override
     public void onDestroy() {
