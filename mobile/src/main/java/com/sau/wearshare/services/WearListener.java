@@ -2,6 +2,7 @@ package com.sau.wearshare.services;
 
 import android.content.Intent;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit;
  * Created by saurabh on 15-07-09.
  */
 public class WearListener extends WearableListenerService {
+
     private static final String TAG = "WearListener";
 
     private static final String CLICK_PATH = "/click_photo";
@@ -44,13 +46,11 @@ public class WearListener extends WearableListenerService {
 
     private GoogleApiClient mGoogleApiClient;
     private SendTask sendTask;
-    Handler mHandler;
 
     @Override
     public void onCreate() {
         super.onCreate();
-
-
+        Task.init(Secret.API_KEY);
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
@@ -75,7 +75,7 @@ public class WearListener extends WearableListenerService {
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
-        Logger.LOGD(TAG, "Received message.");
+        Logger.LOGD(TAG, "Received message: " + messageEvent.getPath());
         if (messageEvent.getPath().equals(CLICK_PATH))
             takePicture();
         else if (messageEvent.getPath().equals(SEND_PICTURE_PATH))
@@ -126,51 +126,88 @@ public class WearListener extends WearableListenerService {
         );
     }
 
+    private boolean messageSent = false;
     private void sendDownloadStartedMessage(){
-        Wearable.MessageApi.sendMessage(
-                mGoogleApiClient, node, DOWNLOAD_STARTED_PATH, new byte[0]).setResultCallback(
-                new ResultCallback<MessageApi.SendMessageResult>() {
-                    @Override
-                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                        if (!sendMessageResult.getStatus().isSuccess()) {
-                            Log.e(TAG, "Failed to send message with status code: "
-                                    + sendMessageResult.getStatus().getStatusCode());
+        if (!messageSent) {
+            Wearable.MessageApi.sendMessage(
+                    mGoogleApiClient, node, DOWNLOAD_STARTED_PATH, new byte[0]).setResultCallback(
+                    new ResultCallback<MessageApi.SendMessageResult>() {
+                        @Override
+                        public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                            Logger.LOGD(TAG, "Download started Message Sent");
+                            if (!sendMessageResult.getStatus().isSuccess()) {
+                                Logger.LOGD(TAG, "Failed to send message with status code: "
+                                        + sendMessageResult.getStatus().getStatusCode());
+                            }
                         }
                     }
-                }
-        );
+            );
+            messageSent = true;
+        }
+
     }
 
-    private boolean startMsgSent = false;
-
     private void sendPictureFromData(){
-        Task.init(Secret.API_KEY);
-        sendTask = new SendTask(this, new File[]{new File(getFilesDir() + "/temp.png")});
-        sendTask.setOnTaskListener(new Task.OnTaskListener() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
             @Override
-            public void onNotify(int state, int detailedState, Object obj) {
-                if (state == SendTask.State.PREPARING) {
-                    if (detailedState == SendTask.DetailedState.PREPARING_UPDATED_KEY) {
-                        String key = (String) obj;
-                        if (key != null)
-                            sendPictureCode(key);
+            public void run() {
+                sendTask = new SendTask(getApplicationContext(), new File[]{new File(getFilesDir() + "/click.jpg")});
+                sendTask.setOnTaskListener(new Task.OnTaskListener() {
+                    @Override
+                    public void onNotify(int state, int detailedState, Object obj) {
+                        if (state == SendTask.State.PREPARING) {
+                            if (detailedState == SendTask.DetailedState.PREPARING_UPDATED_KEY) {
+                                String key = (String) obj;
+                                if (key != null)
+                                    sendPictureCode(key);
+                            }
+                        } else if(state == SendTask.State.TRANSFERRING) {
+                            SendTask.FileInfo fileState = (SendTask.FileInfo)obj;
+                            if(fileState != null) {
+                                Logger.LOGD(TAG, String.format("%s: %s/%s",
+                                        fileState.getFile().getName(),
+                                        fileState.getTransferSize(), fileState.getTotalSize()));
+                                sendDownloadStartedMessage();
+                            }
+                        } else if (state == SendTask.State.FINISHED) {
+                            switch(detailedState) {
+                                case SendTask.DetailedState.FINISHED_SUCCESS:
+                                    Logger.LOGD(TAG, "Transfer finished (success)");
+                                    break;
+                                case SendTask.DetailedState.FINISHED_CANCEL:
+                                    Logger.LOGD(TAG, "Transfer finished (canceled)");
+                                    break;
+                                case SendTask.DetailedState.FINISHED_ERROR:
+                                    Logger.LOGD(TAG, "Transfer finished (error!)");
+                                    break;
+                            }
+                        }
+                        else if(state == SendTask.State.ERROR) {
+                            switch(detailedState) {
+                                case SendTask.DetailedState.ERROR_SERVER:
+                                    Logger.LOGD(TAG, "Netork/Server Error");
+                                    break;
+                                case SendTask.DetailedState.ERROR_NO_REQUEST:
+                                    Logger.LOGD(TAG, "Timeout!");
+                                    break;
+                                case SendTask.DetailedState.ERROR_NO_EXIST_FILE:
+                                    Logger.LOGD(TAG,"No exist files!");
+                                    break;
+                            }
+                        }
                     }
-                }
-
-                else if(state == SendTask.State.FINISHED) {
-                    startMsgSent = false;
-                } else if(state == SendTask.State.ERROR) {
-                    startMsgSent = false;
-                }
+                });
+                sendTask.start();
             }
         });
-        sendTask.start();
+
+
     }
 
     private void cancelSendPicture(){
         if(sendTask != null)
             sendTask.cancel();
-        startMsgSent = false;
     }
 
 }

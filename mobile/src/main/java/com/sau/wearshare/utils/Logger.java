@@ -8,8 +8,7 @@ import android.util.Log;
 public class Logger {
 
     public static void LOGD(final String tag, String message){
-        if(Log.isLoggable(tag, Log.DEBUG))
-                System.out.print("Debug: " + tag + ": " + message);
+            Log.d(tag, "Debug: " + message);
     }
 
     public static void LOGE(final String tag, String message){

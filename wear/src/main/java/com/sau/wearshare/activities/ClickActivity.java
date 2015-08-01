@@ -185,6 +185,7 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
                             Log.e(TAG, "Failed to send message with status code: "
                                     + sendMessageResult.getStatus().getStatusCode());
                         }
+                        finish();
                     }
                 }
         );
@@ -207,7 +208,8 @@ public class ClickActivity extends Activity implements GoogleApiClient.Connectio
                         @Override
                         public void run() {
                             Log.d(TAG, "Setting background image on second page..");
-                            mPreviewPhotoFragment.setBackgroundImage(bitmap);
+                            if(bitmap != null)
+                                mPreviewPhotoFragment.setBackgroundImage(bitmap);
                         }
                     });
                 }

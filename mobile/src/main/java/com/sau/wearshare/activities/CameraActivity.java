@@ -88,7 +88,6 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback  
             final Camera.Parameters params = cam.getParameters();
             final Camera.Size size = getOptimalSize();
             params.setPreviewSize(size.width, size.height);
-            params.set("orientation", "portrait");
             cam.setParameters(param);
             cam.setPreviewDisplay(view.getHolder());
             cam.startPreview();
@@ -181,8 +180,8 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback  
     private void saveBitmapToFile(Bitmap bmp){
         FileOutputStream out = null;
         try {
-            out = new FileOutputStream(mContext.getFilesDir() + "/temp.png");
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
+            out = new FileOutputStream(mContext.getFilesDir() + "/click.jpg");
+            bmp.compress(Bitmap.CompressFormat.JPEG, 75, out);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -213,7 +212,7 @@ public class CameraActivity extends Activity implements SurfaceHolder.Callback  
         protected Void doInBackground(Bitmap... bitmaps) {
             Bitmap bm = bitmaps[0];
             saveBitmapToFile(bm);
-            sendPhoto(toAsset(getResizedBitmap(bm, 1024)));
+            sendPhoto(toAsset(getResizedBitmap(bm, 500)));
             return null;
         }
 
