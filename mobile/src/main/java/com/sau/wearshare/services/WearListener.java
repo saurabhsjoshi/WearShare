@@ -201,13 +201,18 @@ public class WearListener extends WearableListenerService {
                 sendTask.start();
             }
         });
-
-
     }
 
     private void cancelSendPicture(){
-        if(sendTask != null)
-            sendTask.cancel();
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if(sendTask != null)
+                    sendTask.cancel();
+            }
+        });
+
     }
 
 }
