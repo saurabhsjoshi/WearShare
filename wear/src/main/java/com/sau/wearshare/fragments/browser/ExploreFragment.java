@@ -70,7 +70,6 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
         exploreListAdapter = new ExploreListAdapter(getActivity(), files);
 
         full_path = new ArrayList<>();
-        full_path.add("home");
 
         initGoogleApiClient();
 
@@ -92,39 +91,44 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
 
     @Override
     public void onClick(WearableListView.ViewHolder viewHolder) {
-        String folder = files.get(viewHolder.getAdapterPosition()).getFilename();
+        FileObject f = files.get(viewHolder.getAdapterPosition());
+        if(f.isFile())
+            return;
+
+        String folder = f.getFilename();
         goAhead(folder);
     }
 
-    @Override
-    public void onTopEmptyRegionClick() {
+    private void goBack() {
+        if(full_path.isEmpty())
+            return;
 
-    }
-
-    private void goBack(){
-        if(full_path.size() == 1)
+        if(full_path.size() <= 1) {
+            full_path.clear();
             setCurrentPath("home");
+            sendExploreMessage(true);
+        }
 
         else
         {
-            full_path.remove(full_path.size()-1);
+            full_path.remove(full_path.size() - 1);
             setCurrentPath(full_path.get(full_path.size()-1));
+            sendExploreMessage(false);
         }
 
+    }
+
+    private void goAhead(String folder){
+        full_path.add(folder);
+        setCurrentPath(folder);
+        sendExploreMessage(false);
     }
 
     private void setCurrentPath(String path){
         txt_cur_path.setText(path);
     }
 
-    private void goAhead(String folder){
-        full_path.add(folder);
-        setCurrentPath(folder);
-    }
 
-    private void loadHome(){
-
-    }
 
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
@@ -175,10 +179,7 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
         sendExploreMessage(true);
     }
 
-    @Override
-    public void onConnectionSuspended(int i) {
 
-    }
 
     public void sendExploreMessage(Boolean isHome){
         String path = EXPLORE_FOLDER_PATH;
@@ -200,7 +201,6 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
                     }
                 }
         );
-
     }
 
     @Override
@@ -212,15 +212,26 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
                     return fileObject.getFilename().compareTo(t1.getFilename());
                 }
             });
+            if(getActivity() == null)
+                return;
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     files.clear();
                     files.addAll(temp);
                     temp.clear();
-                    exploreListAdapter.notifyDataSetChanged();
+                    lst_files.setAdapter(new ExploreListAdapter(getActivity(), files));
+                    if(!files.isEmpty())
+                        lst_files.scrollToPosition(0);
+                    //exploreListAdapter.notifyDataSetChanged();
                 }
             });
         }
     }
+
+    @Override
+    public void onTopEmptyRegionClick() { }
+
+    @Override
+    public void onConnectionSuspended(int i) { }
 }

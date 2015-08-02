@@ -58,6 +58,7 @@ public class WearListener extends WearableListenerService {
     private static final String EXPLORE_SENT_PATH = "/explore_sent";
 
 
+
     private static final long CONNECTION_TIME_OUT_MS = 100;
     private String node;
 
@@ -136,32 +137,39 @@ public class WearListener extends WearableListenerService {
     }
 
 
-
     private void sendExploreFiles(String path, boolean isHome){
+        String root = Environment.getExternalStorageDirectory().toString();
         if(isHome)
-            path = Environment.getExternalStorageDirectory().toString();
+            path = root;
+        else
+            path = root + path;
+
+        Logger.LOGD(TAG, path);
+
 
         File f = new File(path);
         File file[] = f.listFiles();
-        for(int i = 0; i < file.length; i++){
-            FileObject temp;
-            PutDataMapRequest putDataMapReq = PutDataMapRequest.create(EXPLORE_DATA_PATH);
+        if(file != null)
+        {
+            for(int i = 0; i < file.length; i++){
+                FileObject temp;
+                PutDataMapRequest putDataMapReq = PutDataMapRequest.create(EXPLORE_DATA_PATH);
 
-            if(file[i].isFile())
-                temp = new FileObject(file[i].getName(), true);
-            else
-                temp = new FileObject(file[i].getName(), false);
+                //Don't show hidden files
+                if(!file[i].getName().startsWith(".")){
+                    temp = new FileObject(file[i].getName(), file[i].isFile());
+                    temp.getDataMap(putDataMapReq.getDataMap());
+                    PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+                    Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq).await();
+                }
+            }
 
-            temp.getDataMap(putDataMapReq.getDataMap());
-            PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
-            Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq).await();
         }
+
         Wearable.MessageApi.sendMessage(
                 mGoogleApiClient, node, EXPLORE_SENT_PATH, new byte[0]);
 
     }
-
-
 
 
     private void takePicture(){

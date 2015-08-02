@@ -22,7 +22,7 @@
         android:layout_toEndOf="@id/btn_back"
         android:textColor="@color/light_grey"
         android:background="@android:color/transparent"
-        android:text="sdcard"
+        android:text="home"
         android:textSize="12sp"
         android:fontFamily="san-serif-light"
         android:layout_width="wrap_content"
