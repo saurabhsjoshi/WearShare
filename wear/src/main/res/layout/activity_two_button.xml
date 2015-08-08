@@ -1,0 +1,46 @@
+<android.support.wearable.view.BoxInsetLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@android:color/background_light"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:padding="25dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="5dp"
+        app:layout_box="all">
+
+        <TextView
+            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:text="Open or add"
+            android:textColor="@color/black" />
+
+        <android.support.wearable.view.CircularButton
+            android:id="@+id/btn_open"
+            android:layout_marginTop="10dp"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:src="@drawable/ic_folder_open_white_24dp"
+            app:rippleColor="@color/dark_blue"
+            app:pressedTranslationZ="1dp"
+            app:imageScaleMode="center"
+            android:layout_gravity="bottom|start"
+            />
+
+        <android.support.wearable.view.CircularButton
+            android:id="@+id/btn_add"
+            android:layout_marginTop="10dp"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:src="@drawable/ic_add_white_24dp"
+            app:rippleColor="@color/dark_blue"
+            app:pressedTranslationZ="1dp"
+            app:imageScaleMode="center"
+            android:layout_gravity="bottom|end"
+            />
+    </FrameLayout>
+</android.support.wearable.view.BoxInsetLayout>

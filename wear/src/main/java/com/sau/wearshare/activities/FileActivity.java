@@ -19,6 +19,7 @@ import com.google.android.gms.wearable.Wearable;
 import com.sau.wearshare.R;
 import com.sau.wearshare.adapters.HomePagerAdapter;
 import com.sau.wearshare.fragments.browser.ExploreFragment;
+import com.sau.wearshare.models.FileObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,10 +43,13 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
     List<Fragment> pages;
     DotsPageIndicator dotsPageIndicator;
 
+    private ArrayList<FileObject> selectedFiles;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file);
+        selectedFiles = new ArrayList<>();
         initGoogleApiClient();
         mHandler = new Handler();
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
@@ -91,6 +95,10 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
                 .build();
         mGoogleApiClient.connect();
         retrieveDeviceNode();
+    }
+
+    public void addSelectedFile(FileObject fileObject){
+        selectedFiles.add(fileObject);
     }
 
     @Override
