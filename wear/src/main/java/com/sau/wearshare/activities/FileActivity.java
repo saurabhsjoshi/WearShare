@@ -2,6 +2,7 @@ package com.sau.wearshare.activities;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.wearable.view.DotsPageIndicator;
@@ -44,6 +45,7 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
     DotsPageIndicator dotsPageIndicator;
 
     private ArrayList<FileObject> selectedFiles;
+    private ExploreFragment mExploreFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +67,7 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
     private void setUI(){
         mPager = (GridViewPager) findViewById(R.id.pager);
         mPager.setOffscreenPageCount(0);
-        Fragment mExploreFragment = new ExploreFragment();
+        mExploreFragment = new ExploreFragment();
         pages.add(mExploreFragment);
         final HomePagerAdapter adapter = new HomePagerAdapter(getFragmentManager(), pages);
         mPager.setAdapter(adapter);
@@ -95,6 +97,20 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
                 .build();
         mGoogleApiClient.connect();
         retrieveDeviceNode();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1) {
+            if(resultCode == 11){
+                String result=data.getStringExtra("filename");
+                if(mExploreFragment != null)
+                    mExploreFragment.goAhead(result);
+            }
+            if (resultCode == 99) {
+                addSelectedFile(mExploreFragment.selected_object);
+            }
+        }
     }
 
     public void addSelectedFile(FileObject fileObject){
