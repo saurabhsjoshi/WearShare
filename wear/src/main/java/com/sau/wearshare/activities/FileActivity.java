@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.support.wearable.view.DotsPageIndicator;
 import android.support.wearable.view.GridViewPager;
 import android.support.wearable.view.WatchViewStub;
+import android.view.View;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataApi;
@@ -20,6 +21,9 @@ import com.google.android.gms.wearable.Wearable;
 import com.sau.wearshare.R;
 import com.sau.wearshare.adapters.HomePagerAdapter;
 import com.sau.wearshare.fragments.browser.ExploreFragment;
+import com.sau.wearshare.fragments.browser.SelectionFragment;
+import com.sau.wearshare.fragments.browser.SendFilesFragment;
+import com.sau.wearshare.models.DataHolder;
 import com.sau.wearshare.models.FileObject;
 
 import java.util.ArrayList;
@@ -44,14 +48,17 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
     List<Fragment> pages;
     DotsPageIndicator dotsPageIndicator;
 
-    private ArrayList<FileObject> selectedFiles;
+
     private ExploreFragment mExploreFragment;
+    private SelectionFragment selectionFragment;
+    private SendFilesFragment sendFilesFragment;
+
+    private boolean mFragmentShowing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file);
-        selectedFiles = new ArrayList<>();
         initGoogleApiClient();
         mHandler = new Handler();
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
@@ -99,6 +106,10 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
         retrieveDeviceNode();
     }
 
+    public void sendFiles(){
+
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 1) {
@@ -108,13 +119,37 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
                     mExploreFragment.goAhead(result);
             }
             if (resultCode == 99) {
-                addSelectedFile(mExploreFragment.selected_object);
+                addSelectedFile(DataHolder.selectedItem);
+                updateUi();
             }
         }
     }
 
-    public void addSelectedFile(FileObject fileObject){
-        selectedFiles.add(fileObject);
+    private void updateUi(){
+        if(!mFragmentShowing){
+            mPager.setOffscreenPageCount(2);
+            selectionFragment = new SelectionFragment();
+            sendFilesFragment = new SendFilesFragment();
+            pages.add(selectionFragment);
+            pages.add(sendFilesFragment);
+            dotsPageIndicator = (DotsPageIndicator) findViewById(R.id.page_indicator);
+            dotsPageIndicator.setDotSpacing((int) getResources().getDimension(R.dimen.dots_spacing));
+            dotsPageIndicator.setPager(mPager);
+            dotsPageIndicator.setVisibility(View.VISIBLE);
+            mFragmentShowing = true;
+        }
+        else {
+            selectionFragment.updateList();
+        }
+
+        moveToPage(1);
+    }
+    private void moveToPage(int num){
+        mPager.setCurrentItem(0, num, true);
+    }
+
+    private void addSelectedFile(FileObject fileObject){
+        DataHolder.selectedItems.add(fileObject);
     }
 
     @Override

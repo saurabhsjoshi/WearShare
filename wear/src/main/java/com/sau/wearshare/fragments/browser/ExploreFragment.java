@@ -1,6 +1,7 @@
 package com.sau.wearshare.fragments.browser;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.wearable.view.WearableListView;
@@ -24,7 +25,9 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 import com.sau.wearshare.R;
+import com.sau.wearshare.activities.TwoButtonActivity;
 import com.sau.wearshare.adapters.ExploreListAdapter;
+import com.sau.wearshare.models.DataHolder;
 import com.sau.wearshare.models.FileObject;
 
 import java.util.ArrayList;
@@ -60,6 +63,7 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
     private static final String EXPLORE_DATA_PATH = "/explore_data";
     private static final String EXPLORE_SENT_PATH = "/explore_sent";
 
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -91,12 +95,10 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
 
     @Override
     public void onClick(WearableListView.ViewHolder viewHolder) {
-        FileObject f = files.get(viewHolder.getAdapterPosition());
-        if(f.isFile())
-            return;
-
-        String folder = f.getFilename();
-        goAhead(folder);
+        DataHolder.selectedItem = files.get(viewHolder.getAdapterPosition());
+        Intent i = new Intent(getActivity(), TwoButtonActivity.class);
+        i.putExtra("filename", DataHolder.selectedItem.getFilename());
+        getActivity().startActivityForResult(i, 1);
     }
 
     private void goBack() {
@@ -118,7 +120,7 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
 
     }
 
-    private void goAhead(String folder){
+    public void goAhead(String folder){
         full_path.add(folder);
         setCurrentPath(folder);
         sendExploreMessage(false);
@@ -223,7 +225,6 @@ public class ExploreFragment extends Fragment implements WearableListView.ClickL
                     lst_files.setAdapter(new ExploreListAdapter(getActivity(), files));
                     if(!files.isEmpty())
                         lst_files.scrollToPosition(0);
-                    //exploreListAdapter.notifyDataSetChanged();
                 }
             });
         }
