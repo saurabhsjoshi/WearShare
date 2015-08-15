@@ -5,18 +5,23 @@ import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.wearable.activity.ConfirmationActivity;
 import android.support.wearable.view.DotsPageIndicator;
 import android.support.wearable.view.GridViewPager;
 import android.support.wearable.view.WatchViewStub;
+import android.util.Log;
 import android.view.View;
 
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 import com.sau.wearshare.R;
 import com.sau.wearshare.adapters.HomePagerAdapter;
@@ -37,6 +42,8 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
         GoogleApiClient.ConnectionCallbacks{
 
     private static final String TAG = "FileActivity";
+    private static final String SEND_FILES_PATH = "/send_files_path";
+    private static final String EXPLORE_FILES_PATH = "/explore_file";
 
     private GridViewPager mPager;
     private Handler mHandler;
@@ -60,6 +67,8 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file);
         initGoogleApiClient();
+        DataHolder.selectedItems.clear();
+        DataHolder.selectedItem = null;
         mHandler = new Handler();
         final WatchViewStub stub = (WatchViewStub) findViewById(R.id.watch_view_stub);
         stub.setOnLayoutInflatedListener(new WatchViewStub.OnLayoutInflatedListener() {
@@ -106,9 +115,6 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
         retrieveDeviceNode();
     }
 
-    public void sendFiles(){
-
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -169,6 +175,54 @@ public class FileActivity extends Activity implements DataApi.DataListener, Mess
 
     @Override
     public void onConnectionSuspended(int i) {
+
+    }
+
+    private void sendFilesDone(){
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, SEND_FILES_PATH, new byte[0]).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        if (!sendMessageResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failed to send message with status code: "
+                                    + sendMessageResult.getStatus().getStatusCode());
+                        }
+                        finish();
+                    }
+                }
+        );
+    }
+
+    public void sendFiles(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(FileObject f : DataHolder.selectedItems){
+                    PutDataMapRequest putDataMapReq = PutDataMapRequest.create(EXPLORE_FILES_PATH);
+                    f.getDataMap(putDataMapReq.getDataMap());
+                    PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+                    Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq).await();
+                }
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        sendFilesDone();
+                    }
+                });
+
+            }
+        }).start();
+        Intent intent = new Intent(this, ConfirmationActivity.class);
+        intent.putExtra(ConfirmationActivity.EXTRA_ANIMATION_TYPE,
+                ConfirmationActivity.OPEN_ON_PHONE_ANIMATION);
+        intent.putExtra(ConfirmationActivity.EXTRA_MESSAGE,"Sending");
+        startActivity(intent);
 
     }
 }

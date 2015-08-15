@@ -35,6 +35,7 @@ import com.sau.wearshare.sdk.Task;
 import com.sau.wearshare.utils.Logger;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -56,8 +57,8 @@ public class WearListener extends WearableListenerService {
     private static final String EXPLORE_FOLDER_PATH = "/explore_folder";
     private static final String EXPLORE_DATA_PATH = "/explore_data";
     private static final String EXPLORE_SENT_PATH = "/explore_sent";
-
-
+    private static final String EXPLORE_FILES_PATH = "/explore_file";
+    private static final String SEND_FILES_PATH = "/send_files_path";
 
     private static final long CONNECTION_TIME_OUT_MS = 100;
     private String node;
@@ -86,14 +87,16 @@ public class WearListener extends WearableListenerService {
         filter.addAction("cancel_upload");
     }
 
+    private ArrayList<FileObject> files_to_send = new ArrayList<>();
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         for (DataEvent event : dataEvents) {
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 // DataItem changed
                 DataItem item = event.getDataItem();
-                if (item.getUri().getPath().compareTo("/count") == 0) {
+                if (item.getUri().getPath().compareTo(EXPLORE_FILES_PATH) == 0) {
                     DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+                    files_to_send.add(new FileObject(dataMap));
                 }
             } else if (event.getType() == DataEvent.TYPE_DELETED) {
                 // DataItem deleted
@@ -107,7 +110,7 @@ public class WearListener extends WearableListenerService {
         if (messageEvent.getPath().equals(CLICK_PATH))
             takePicture();
         else if (messageEvent.getPath().equals(SEND_PICTURE_PATH))
-            sendPictureFromData();
+            sendPictureFromData(false);
         else if (messageEvent.getPath().equals(CANCEL_PICTURE_PATH))
             cancelSendPicture();
         else if (messageEvent.getPath().equals(RECEIVE_FILE_PATH))
@@ -116,6 +119,9 @@ public class WearListener extends WearableListenerService {
             sendExploreFiles(new String(messageEvent.getData()), true);
         else if (messageEvent.getPath().equals(EXPLORE_FOLDER_PATH))
             sendExploreFiles(new String(messageEvent.getData()), false);
+        else if(messageEvent.getPath().equals(SEND_FILES_PATH))
+            sendPictureFromData(true);
+
     }
 
     private void retrieveDeviceNode() {
@@ -135,6 +141,7 @@ public class WearListener extends WearableListenerService {
             }
         }).start();
     }
+
 
 
     private void sendExploreFiles(String path, boolean isHome){
@@ -157,7 +164,7 @@ public class WearListener extends WearableListenerService {
 
                 //Don't show hidden files
                 if(!file[i].getName().startsWith(".")){
-                    temp = new FileObject(file[i].getName(), file[i].isFile());
+                    temp = new FileObject(file[i].getName(), file[i].isFile(), file[i].getAbsolutePath());
                     temp.getDataMap(putDataMapReq.getDataMap());
                     PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
                     Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq).await();
@@ -165,12 +172,14 @@ public class WearListener extends WearableListenerService {
             }
 
         }
-
+        try {
+            Thread.sleep(150);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         Wearable.MessageApi.sendMessage(
                 mGoogleApiClient, node, EXPLORE_SENT_PATH, new byte[0]);
-
     }
-
 
     private void takePicture(){
         Intent dialogIntent = new Intent(this, CameraActivity.class);
@@ -214,13 +223,23 @@ public class WearListener extends WearableListenerService {
 
     }
 
-    private void sendPictureFromData(){
+    private void sendPictureFromData(final boolean isFiles){
         buildNotification("Sending File", "Upload in progress");
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             @Override
             public void run() {
-                sendTask = new SendTask(getApplicationContext(), new File[]{new File(getFilesDir() + "/click.jpg")});
+                if(isFiles) {
+                    File f[] = new File[files_to_send.size()];
+                    for(int i = 0; i < files_to_send.size(); i++){
+                        f[i] = new File(files_to_send.get(i).getFilePath());
+                        Logger.LOGD(TAG, "File: " + f[i].getAbsolutePath());
+                    }
+                    files_to_send.clear();
+                    sendTask = new SendTask(getApplicationContext(), f);
+                } else {
+                    sendTask = new SendTask(getApplicationContext(), new File[]{new File(getFilesDir() + "/click.jpg")});
+                }
                 sendTask.setOnTaskListener(new Task.OnTaskListener() {
                     @Override
                     public void onNotify(int state, int detailedState, Object obj) {
